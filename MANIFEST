@@ -1,0 +1,11 @@
+MANIFEST
+README
+LICENSE
+Changes
+Makefile.PL
+lib/URI/ParseSearchString/More.pm
+t/001_load.t
+t/002_pod.t  
+t/003_coverage.t  
+t/004_critic.t  
+t/perlcriticrc
