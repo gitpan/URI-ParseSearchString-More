@@ -7,7 +7,7 @@ WriteMakefile(
     NAME         => 'URI::ParseSearchString::More',
     VERSION_FROM => 'lib/URI/ParseSearchString/More.pm', # finds \$VERSION
     AUTHOR       => 'Olaf Alders (olaf@wundersolutions.com)',
-    ABSTRACT     => 'Extract search strings that can\'t be found in URLs and intelligently guess others.',
+    ABSTRACT     => 'Extract search strings from more referrers.',
     PREREQ_PM    => {
                      'Params::Validate'			=> 0,
                      'Test::More'				=> 0,
@@ -16,5 +16,6 @@ WriteMakefile(
                      'URI::ParseSearchString' 	=> 0,
                      'WWW::Mechanize' 			=> 0,
                      'WWW::Mechanize::Cached'	=> 0,
+                     'URI::Heuristic'           => 0,
                     },
 );

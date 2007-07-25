@@ -1,6 +1,13 @@
 Revision history for Perl module URI::ParseSearchString::More
 
+0.02 2007-07-25
+    - Added support for the following engines:
+        http://as.starware.com/dp/search
+        http://as.weatherstudio.com/dp/search
+    - Using URI::Heuristic to fix malformed or incomplete URLs
+    
 0.01 Sat Jul 21 16:14:45 2007
     - original version; created by ExtUtils::ModuleMaker 0.49
+
 
 

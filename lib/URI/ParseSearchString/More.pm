@@ -5,13 +5,22 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
+
+my $DEBUG = 0;
 
 use Params::Validate qw( validate SCALAR );
+use URI::Heuristic qw(uf_uristr);
 use WWW::Mechanize::Cached;
 
 my %search_regex = (
     aol => qr/AOL Search results for "(.*)"/,
+    as  => qr{(?:WeatherStudio|Starware) (.*) Search Results},
+);
+
+my %url_regex = ( 
+    aol => qr/search\?encquery=/, 
+    as  => qr{as.\w+.com/dp/search\?x=},
 );
 
 sub se_term {
@@ -19,17 +28,29 @@ sub se_term {
     my $self = shift;
     my $url = shift;
     
-    # is this a funky AOL query?
-    if ( $url =~ /search\?encquery=/ ) {
-        my $mech = $self->get_mech();
-        $mech->get( $url );
-
-        my $search_term = $self->_apply_regex(
-            string  => $mech->title(),
-            regex   => 'aol',
-        );
+    print $url, "\n" if $DEBUG;
+    
+    foreach my $engine ( keys %url_regex ) {
         
-        return $search_term if $search_term;
+        print $engine, "\n" if $DEBUG;
+        
+        if ( $url =~ $url_regex{$engine} ) {
+            
+            # fix funky URLs
+            $url = uf_uristr($url);
+            
+            print "match on $engine url\n" if $DEBUG;
+            
+            my $mech = $self->get_mech();
+            $mech->get( $url );
+    
+            my $search_term = $self->_apply_regex(
+                string  => $mech->title(),
+                regex   => $engine,
+            );
+            
+            return $search_term if $search_term;
+        }
     }
 
     return $self->SUPER::se_term( $url, @_ );
@@ -78,7 +99,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =head1 SYNOPSIS
 
@@ -105,20 +126,27 @@ queries.  Support for other engines can be added as needed.
   my $search_terms = $more->se_term( $search_engine_referring_url );
 
 
-=head1 EXTENDED URI::ParseSearchString METHODS
+=head1 URI::ParseSearchString
 
 =head2 se_term
 
 At this point, this is the only "extended" URI::ParseSearchString method.  If
-the URL supplied looks to be an AOL search query with no search data in the 
-URL, this method will attempt a WWW::Mechanize::Cached lookup of the URL and 
-will try to extract the search terms from the page returned.  In all other 
-cases the results of URI::ParseSearchString::se_term will be returned.
+the URL supplied looks to be a search query with session info rather than 
+search data in the URL, this method will attempt a WWW::Mechanize::Cached 
+lookup of the URL and will try to extract the search terms from the page 
+returned.  In all other cases the results of URI::ParseSearchString::se_term 
+will be returned.
 
 WWW::Mechanize::Cached is used to speed up your movement through large log 
 files which may contain multiple similar URLs.
 
-=head1 STRICTLY URI::ParseSearchString::More METHODS
+Engines currently supported:
+
+  http://aolsearch.aol.com/aol/search
+  http://as.starware.com/dp/search
+  http://as.weatherstudio.com/dp/search
+
+=head1 URI::ParseSearchString::More
 
 
 =head2 get_mech
@@ -136,12 +164,12 @@ know what you're doing, play around with it.  Caveat emptor.
   
 =head1 TO DO
 
-Sometimes a good guess is all you need.  This module should make (hopefully)
+Sometimes a good guess is all you need.  This module should make a (hopefully)
 intelligent guess when L<URI::ParseSearchString> comes up empty and there's no 
 session info to be had.
 
 Here is a list of some of the engines currently not covered by 
-URI::ParseSearchString that may be added to this module:
+L<URI::ParseSearchString> that may be added to this module:
 
   about.com
   search.msn.ca (as well as other permutations of search.msn)

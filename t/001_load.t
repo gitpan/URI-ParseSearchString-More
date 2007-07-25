@@ -5,7 +5,7 @@ use warnings;
 
 # t/001_load.t - check module loading and create testing directory
 
-use Test::More tests => 9;
+use Test::More tests => 15;
 
 BEGIN { use_ok( 'URI::ParseSearchString::More' ); }
 
@@ -28,12 +28,27 @@ require_ok( 'Test::WWW::Mechanize' );
 my $mech = Test::WWW::Mechanize->new();
 
 my $query = "testing";
-$mech->get_ok("http://aolsearch.aol.com/aol/search?invocationType=topsearchbox.webhome&query=$query", "got search page from AOL");
 
-ok( $mech->title(), "got a title from AOL: " . $mech->title() );
-my $search_term = $more->_apply_regex(
-    string  => $mech->title(),
-    regex   => 'aol',
+my %urls = (
+    aol => [ "http://aolsearch.aol.com/aol/search?invocationType=topsearchbox.webhome&query=$query" ],
+    as  => [ 
+        "http://as.starware.com/dp/search?src_id=&client_id=&product=&serv=web&version=&it=-1&step=1&subproduct=site&qry=$query&z=Find+It", 
+        "http://as.weatherstudio.com/dp/search?src_id=&client_id=&product=&serv=web&version=&it=-1&step=1&subproduct=site&qry=$query&z=Find+It",
+    ],
 );
 
-cmp_ok( $search_term, 'eq', $query, "aol returns correct search term" );
+foreach my $engine ( keys %urls ) {
+    
+    foreach my $url ( @{$urls{$engine}}) {
+        
+        $mech->get_ok($url, "got search page from $engine");
+    
+        ok( $mech->title(), "got a title from $engine: " . $mech->title() );
+        my $search_term = $more->_apply_regex(
+            string  => $mech->title(),
+            regex   => $engine,
+        );
+        
+        cmp_ok( $search_term, 'eq', $query, "$engine returns correct search term" );
+    }
+}
