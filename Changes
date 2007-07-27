@@ -1,5 +1,8 @@
 Revision history for Perl module URI::ParseSearchString::More
 
+0.03 2007-07-27
+    - Added Test::Pod::Coverage, Test::Pod and File::Spec to prerequisites
+    
 0.02 2007-07-25
     - Added support for the following engines:
         http://as.starware.com/dp/search

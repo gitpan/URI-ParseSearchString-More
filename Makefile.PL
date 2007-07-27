@@ -9,8 +9,11 @@ WriteMakefile(
     AUTHOR       => 'Olaf Alders (olaf@wundersolutions.com)',
     ABSTRACT     => 'Extract search strings from more referrers.',
     PREREQ_PM    => {
+                     'File::Spec'               => 0,
                      'Params::Validate'			=> 0,
                      'Test::More'				=> 0,
+                     'Test::Pod'                => 0,
+                     'Test::Pod::Coverage'      => 0,
                      'Test::Simple' 			=> 0.44,
                      'Test::WWW::Mechanize'		=> 0,
                      'URI::ParseSearchString' 	=> 0,
