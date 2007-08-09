@@ -5,10 +5,13 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my $DEBUG = 0;
 
+use CGI;
+use Data::Dumper;
+use List::Compare;
 use Params::Validate qw( validate SCALAR );
 use URI::Heuristic qw(uf_uristr);
 use WWW::Mechanize::Cached;
@@ -23,7 +26,126 @@ my %url_regex = (
     as  => qr{as.\w+.com/dp/search\?x=},
 );
 
-sub se_term {
+# local.yahoo.com should come before Yahoo as it has different
+# params
+my @engines = (
+    'local.google',
+    'maps.google',
+    'google',
+    'local.yahoo.com',
+    'search.yahoo.com',
+    'shopping.yahoo.com',
+    'yahoo',
+    'alltheweb.com',
+    'errors.aol.com',
+    'sucheaol.aol.de',
+    'aol',
+    'as.*.com',
+    'ask.com',
+    'att.net',
+    'trustedsearch.com',
+);
+    
+my %query_lookup = (
+    'about.com'             => ['terms'],
+    'alltheweb.com'         => ['q'],
+    'answers.com'           => ['s'],
+    'aol'                   => ['query', 'q'],
+    'as.*.com'              => ['qry'],
+    'ask.*'                 => ['q'],
+    'att.net'               => ['qry', 'q'],
+    'baidu.com'             => ['bs'],
+    'blingo.com'            => ['q'],
+    'citysearch.com'        => ['query'],
+    'clicknow.org.uk'       => ['q'],
+    'clusty.com'            => ['query'],
+    'comcast.net'           => ['query'],
+    'danielsearch.info'     => ['q'],
+    'devilfinder.com'       => ['q'],
+    'education.yahoo.com'   => ['p'],
+    'errors.aol.com'        => ['host'],
+    'excite'                => ['search'],
+    'ez4search.com'         => ['searchname'],
+    'fedstats.com'          => ['s'],    
+    'find.copernic.com'     => ['query'],
+    'finna.is'              => ['query'],
+    'google'                => ['q', 'as_q'],
+    'googel'                => ['q'],
+    'hotbot.lycos.com'      => ['query'],
+    'isearch.com'           => ['Terms'],
+    'local.google'          => ['q', 'near'],
+    'local.yahoo.com'       => ['stx', 'csz' ],
+    'looksmart.com'         => ['key'],
+    'lycos'                 => ['query'],
+    'maps.google'       => ['q', 'near'],
+    'msntv.msn.com'         => ['q'],
+    'munky.com'             => ['term'],
+    'mysearch.com'          => ['searchfor'],     
+    'mywebsearch.com'       => ['searchfor'],
+    'mytelus.com'           => ['q'],
+    'netscape.com'          => ['query'],
+    'overture.com'          => ['Keywords'],
+    'pricescan.com'         => ['SearchString'],
+    'reviews.search.com'    => ['q'],
+    'search.com'            => ['q'],
+    'searchalot.com'        => ['q'],
+    'searchfusion.com'      => ['t'],
+    'searchon.ca'           => ['Terms'],
+    'search.cnn.com'        => ['query'],
+    'search.bearshare.com'  => ['q'],
+    'search.comcast.net'    => ['q'],
+    'search.dmoz.org'       => ['search'],
+    'search.earthlink.net'  => ['q'],
+    'search.findsall.info'  => ['s'],
+    'search.freeserve.com'  => ['q'],
+    'search.freeze.com'     => ['Keywords'],
+    'search.go.com'         => ['search'],
+    'search.juno.com'       => ['query'],
+    'search.iol.ie'         => ['q'],
+    'search.live.com'       => ['q'],
+    'search.netzero.net'    => ['query'],
+    'search.*.msn.'           => ['q'],
+    'search.myway.com'      => ['searchfor'],
+    'search.opera.com'      => ['search'],
+    'search.start.co.il'    => ['q'],
+    'search.starware.com'   => ['qry'],
+    'search.sympatico.msn.ca' => ['q'],
+    'search.sweetim.com'    => ['q'],
+    'search.usatoday.com'   => ['kw'],
+    'search.yahoo.com'      => ['va'],
+    'search.virgilio.it'    => ['qs'],
+    'search.wanadoo.co.uk'  => ['q'],
+    'search.yahoo.com'      => ['q', 'va'],
+    'shopping.yahoo.com'    => ['p'],
+    'start.shaw.ca'         => ['q'],
+    'startgoogle.startpagina.nl'    => ['q'],
+    'starware.com'          => ['qry'],
+    'stumbleupon.com'       => ['url'],
+    'sucheaol.aol.de'       => ['q'],
+    'teoma.com'             => ['q'],
+    'toronto.com'           => ['query'],
+    'trustedsearch.net'     => ['w'],
+    'trustedsearch.com'     => ['w'],
+    #'trusted\-\-search.com'   => ['w'],
+    'yahoo'                 => ['p'],
+    'websearch.cbc.ca'      => ['query'],
+    'websearch.cs.com'      => ['query'],
+    'webtv.net'             => ['q'],
+    'www.bestsearchonearth.info'    => ['Keywords'],
+    'www.boat.com'          => ['HotKeysTopCategory'],
+    'www.factbites.com'     => ['kp'],
+    'www.mweb.co.za'        => ['q'],
+    'www.rr.com/html/search.cfm' => ['query'],
+    'www.wotbox.com'        => ['q'],
+);
+
+my $lc = List::Compare->new(\@engines, [ keys %query_lookup ]);
+my @remaining_engines = $lc->get_complement;
+
+push @engines, @remaining_engines;
+my $regex = join " | ", @engines;
+
+sub parse_search_string {
 
     my $self = shift;
     my $url = shift;
@@ -31,8 +153,6 @@ sub se_term {
     print $url, "\n" if $DEBUG;
     
     foreach my $engine ( keys %url_regex ) {
-        
-        print $engine, "\n" if $DEBUG;
         
         if ( $url =~ $url_regex{$engine} ) {
             
@@ -49,12 +169,119 @@ sub se_term {
                 regex   => $engine,
             );
             
-            return $search_term if $search_term;
+            if ( $search_term ) {
+                $self->{'more'}->{'blame'} = __PACKAGE__;
+                return $search_term;
+            }
         }
     }
 
-    return $self->SUPER::se_term( $url, @_ );
+    # if we've gotten to this point, we don't need mech lookups
+    my $terms = $self->parse_more( $url );
+    
+    if ( $terms ) {
+        $self->{'more'}->{'blame'} = __PACKAGE__;
+        return $terms;
+    }
+    else {
+        # We've come up empty.  Let's see what the superclass can do
+        $self->{'more'}->{'blame'} = 'URI::ParseSearchString';
+        return $self->SUPER::parse_search_string( $url, @_ );
+    }
+}
 
+sub se_term {
+    
+    my $self = shift;
+    return $self->parse_search_string( @_ );
+    
+}
+
+sub parse_more {
+    
+    my $self = shift;
+    my $url = shift;
+    
+    die "you need to supply at least one argument" unless $url;
+    
+    $self->{'more'} = undef;
+    $self->{'more'}->{'string'} = $url;
+
+    if ( $url =~ m{ ( (?: $regex ) .* ?/ ) .* ?\? (.*)\z }xms ) {
+        
+        my $domain       = $1;
+        my $query_string = $2;
+        my $cgi = new CGI( $query_string );
+        
+        # remove everything after the first slash
+        $domain =~ s{/\z}{};
+    
+        my @param_parts = ( );
+        my %params = ( );
+        
+        ENGINE:
+        foreach my $engine ( @engines ) {
+            if ( $domain =~ /$engine/i ) {
+                
+                print "$domain looks like $engine\n" if $DEBUG;
+                my @names = @{ $query_lookup{$engine} };
+                #print Dumper \@names if $DEBUG;
+                
+                foreach my $name ( @names ) {
+                    push @param_parts, $cgi->param( $name );
+                    $params{$name} = $cgi->param( $name );
+                }
+                
+                last ENGINE;
+            }
+        }
+    
+        my $params = join ( " ", @param_parts );
+        my $orig_domain = $domain;
+        $domain =~ s/\/.*//g;
+        unless ( $domain =~ /\w/ ) {
+            $domain = $orig_domain;
+        }
+        
+        $self->{'more'}->{'terms'} = \@param_parts;
+        $self->{'more'}->{'params'} = \%params;
+        
+        return $params;
+    }
+    
+    return;
+    
+}
+
+sub blame {
+    
+    my $self = shift;
+    return $self->{more}->{blame};
+    
+}
+
+sub guess {
+    
+    my $self = shift;
+    my $url = shift || $self->{'more'}->{'string'};
+    
+    print "starting $url" if $DEBUG;
+    my @guesses = ( 'q', 'query', 'searchfor' );
+     
+    if ( $url =~ m{ ( .* ?/ ) .* ?\? (.*)\z }xms ) {
+        
+        my $domain       = $1;
+        my $query_string = $2;
+        my $cgi = new CGI( $query_string );
+        
+        foreach my $guess ( @guesses ) {
+            if ( $cgi->param( $guess) ) {
+                return $cgi->param($guess);
+            }
+        }
+    }
+    
+    return;
 }
 
 sub get_mech {
@@ -99,7 +326,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =head1 SYNOPSIS
 
@@ -112,42 +339,72 @@ Version 0.03
 
 This module is a subclass of L<URI::ParseSearchString>, so you can call any
 methods on this object that you would call on a URI::ParseSearchString object. 
-L<URI::ParseSearchString> is extended in the following way:
+This module works a little harder than its SuperClass to get you results. If 
+it fails, it will return to you the results that L<URI::ParseSearchString>
+would have returned to you anyway. 
 
-L<WWW::Mechanize> is used to extract search strings from some URLs which
-contain session info rather than search params.  Currently this means AOL 
-queries.  Support for other engines can be added as needed.
+L<WWW::Mechanize::Cached> is used to extract search strings from some URLs 
+which contain session info rather than search params.  There is additional
+parsing and also a guess() method which will return good results in many cases
+of doubt.
 
 
 =head1 USAGE
 
   use URI::ParseSearchString::More;
   my $more = URI::ParseSearchString::More;
-  my $search_terms = $more->se_term( $search_engine_referring_url );
+  my $search_terms = $more->se_term( $url );
 
 
 =head1 URI::ParseSearchString
 
-=head2 se_term
+=head2 parse_search_string( $url )
 
-At this point, this is the only "extended" URI::ParseSearchString method.  If
-the URL supplied looks to be a search query with session info rather than 
-search data in the URL, this method will attempt a WWW::Mechanize::Cached 
+At this point, this is the only "extended" URI::ParseSearchString method.  
+This method performs the following bit of logic:
+
+1) If the URL supplied looks to be a search query with session info rather 
+than search data in the URL, it will attempt a WWW::Mechanize::Cached 
 lookup of the URL and will try to extract the search terms from the page 
-returned.  In all other cases the results of URI::ParseSearchString::se_term 
+returned.  
+
+2) If this returns no results, the URL will be processed by parse_more()
+
+3) If there are still no results, the results of URI::ParseSearchString::se_term 
 will be returned.
 
 WWW::Mechanize::Cached is used to speed up your movement through large log 
 files which may contain multiple similar URLs.
 
-Engines currently supported:
+One interesting thing to note is that maps.google.* URLs have 2 important 
+params: "q" and "near".   The same can be said for local.google.*  I would 
+think the results would be incomplete without including the value of "near" in 
+the search terms for these searches.  So, expect the following results:
+
+  my $url = ""http://local.google.ca/local?sc=1&hl=en&near=Stratford%20ON&btnG=Google%20Search&q=home%20health";
+  my $terms = $more->parse_search_string( $url );
+
+  # $terms will = "home health Stratford ON"
+
+Engines with session info currently supported:
 
   http://aolsearch.aol.com/aol/search
   http://as.starware.com/dp/search
   http://as.weatherstudio.com/dp/search
 
+=head2 se_term( $url )
+
+A convenience method that calls parse_search_string.
+
 =head1 URI::ParseSearchString::More
 
+=head2 blame
+
+Returns the name of the module that came up with the results on the last 
+string parsed by parse_search_string().  Possible results:
+
+  URI::ParseSearchString
+  URI::ParseSearchString::More
 
 =head2 get_mech
 
@@ -161,36 +418,31 @@ know what you're doing, play around with it.  Caveat emptor.
   $mech->agent("My Agent Name");
 
   my $search_terms = $more->se_term( $search_engine_referring_url );
+
+=head2 parse_more( $url )
+
+Handles the guts for More's parsing.  This is automatically called (if needed)
+when you pass a search string to se_term().  However, you may also call it
+directly.  Just keep in mind that this method will NOT try to get results from
+URI::ParseSearchString if it comes up empty.
+
+=head2 guess( $url )
+
+For the most part, the parsing that goes on is done with specific search 
+engines (ie. the ones that we already know about) in mind.  However, in a lot 
+cases, a good guess is all that you need.  For example, an URI which contains
+a query string with the parameter "q" or "query" is generally the product of
+a search.  If se_term() or parse_more() has come up empty, guess may just
+provide you with a valid search term.  Then again, it may not.  Caveat emptor.
   
 =head1 TO DO
-
-Sometimes a good guess is all you need.  This module should make a (hopefully)
-intelligent guess when L<URI::ParseSearchString> comes up empty and there's no 
-session info to be had.
 
 Here is a list of some of the engines currently not covered by 
 L<URI::ParseSearchString> that may be added to this module:
 
-  about.com
-  search.msn.ca (as well as other permutations of search.msn)
-  books.google.*
   images.google.*
-  maps.google.*
-  local.google.*
-  search.hk.yahoo.com
-  clusty.com
-  www.excite.co.uk
-  search.dmoz.org
-  aolsearcht2.search.aol.com
-  www.att.net
-  www.overture.com
   www.adelphia.net/google/
-  www.googlesyndicatedsearch.com
-
-One interesting thing to note is that maps.google.* URLs have 2
-important params: "q" and "near".   The same can be said for
-local.google.*  I would think the results would be incomplete without
-including the value of "near" in the search terms for these searches.
+  http://answers.yahoo.com/question/index;_ylt=Al7fJtDUTm2S69bM0VvjPDIjzKIX?qid=20061214165004AADtB1I
 
 =head1 NOTES
 

@@ -5,18 +5,25 @@ use warnings;
 
 # t/001_load.t - check module loading and create testing directory
 
-use Test::More tests => 15;
+use Test::More tests => 18;
+use lib '../lib';
 
 BEGIN { use_ok( 'URI::ParseSearchString::More' ); }
 
 my $more = URI::ParseSearchString::More->new ();
 isa_ok ($more, 'URI::ParseSearchString::More');
 
+can_ok( $more, 'blame');
+can_ok( $more, 'parse_search_string' );
+can_ok( $more, 'se_term' );
+
 my $google = "http://www.google.com.do/search?q=give your visitors a message depending on ip&client=firefox-a&aq=t&oe=utf-8&rls=org.mozilla:es-ES:official&ie=utf-8";
 
 my $terms = $more->se_term( $google );
 
 cmp_ok ( $terms, "eq", "give your visitors a message depending on ip", "returned terms: $terms");
+
+#print $more->blame();
 
 my $name = $more->se_name( $google );
 ok( $name, "got name: $name");

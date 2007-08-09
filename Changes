@@ -1,5 +1,12 @@
 Revision history for Perl module URI::ParseSearchString::More
 
+0.04 2007-08-09
+    - Added the urls.cfg file to facilitate the testing of many URLs
+    - Added parse_more() method, which is called before URI::ParseSearchString
+    - Added guess() method
+    - Added blame() method to confirm which module has returned the last
+      results of se_term() or parse_search_string()
+      
 0.03 2007-07-27
     - Added Test::Pod::Coverage, Test::Pod and File::Spec to prerequisites
     

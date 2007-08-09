@@ -8,4 +8,6 @@ t/001_load.t
 t/002_pod.t  
 t/003_coverage.t  
 t/004_critic.t  
+t/005_parse_more.t
+t/urls.cfg
 t/perlcriticrc
