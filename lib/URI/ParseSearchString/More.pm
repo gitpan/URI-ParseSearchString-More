@@ -5,7 +5,7 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my $DEBUG = 0;
 
@@ -40,13 +40,15 @@ my @engines = (
     'errors.aol.com',
     'sucheaol.aol.de',
     'aol',
+    'ask.*',
     'as.*.com',
-    'ask.com',
     'att.net',
     'trustedsearch.com',
 );
     
 my %query_lookup = (
+
+    'abcsok.no'             => ['q'],
     'about.com'             => ['terms'],
     'alltheweb.com'         => ['q'],
     'answers.com'           => ['s'],
@@ -115,7 +117,7 @@ my %query_lookup = (
     'search.yahoo.com'      => ['va'],
     'search.virgilio.it'    => ['qs'],
     'search.wanadoo.co.uk'  => ['q'],
-    'search.yahoo.com'      => ['q', 'va'],
+    'search.yahoo.com'      => ['q', 'va', 'p'],
     'shopping.yahoo.com'    => ['p'],
     'start.shaw.ca'         => ['q'],
     'startgoogle.startpagina.nl'    => ['q'],
@@ -326,7 +328,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =head1 SYNOPSIS
 
