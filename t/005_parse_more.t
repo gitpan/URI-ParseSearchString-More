@@ -27,4 +27,3 @@ my $more = URI::ParseSearchString::More->new ();
      cmp_ok( $more->blame(), 'eq', 'URI::ParseSearchString::More', "parsed by More" );
 
  }
- 

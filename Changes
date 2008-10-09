@@ -1,5 +1,15 @@
 Revision history for Perl module URI::ParseSearchString::More
 
+0.06 2008-01-11
+    - Tweaked aol regex so that it doesn't flag urls in which
+      aol is a referring url
+    - Added googlesyndication as its own engine
+    - Tweaked comcast params
+    - Added ebay, nextag, dogpile, cuil.com
+    - Fixed bug where parsing would die if no title found in mech lookup
+    - Fixed problem with escaped, quoted strings under mod_perl
+    - Added very basic example script to examples folder
+
 0.05 2007-11-04
 	- Fixed params for yahoo and ask.* urls
 

@@ -5,9 +5,7 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.05';
-
-my $DEBUG = 0;
+our $VERSION = '0.06';
 
 use CGI;
 use Data::Dumper;
@@ -19,11 +17,13 @@ use WWW::Mechanize::Cached;
 my %search_regex = (
     aol => qr/AOL Search results for "(.*)"/,
     as  => qr{(?:WeatherStudio|Starware) (.*) Search Results},
+    dogpile => qr{(.*) - Dogpile Web Search},
 );
 
 my %url_regex = ( 
-    aol => qr/search\?encquery=/, 
+    aol => qr{aol.com/(?:aol|aolcom)/search\?encquery=}, 
     as  => qr{as.\w+.com/dp/search\?x=},
+    dogpile => qr{http://www.dogpile},
 );
 
 # local.yahoo.com should come before Yahoo as it has different
@@ -31,6 +31,7 @@ my %url_regex = (
 my @engines = (
     'local.google',
     'maps.google',
+    'googlesyndication',
     'google',
     'local.yahoo.com',
     'search.yahoo.com',
@@ -48,132 +49,127 @@ my @engines = (
     
 my %query_lookup = (
 
-    'abcsok.no'             => ['q'],
-    'about.com'             => ['terms'],
-    'alltheweb.com'         => ['q'],
-    'answers.com'           => ['s'],
-    'aol'                   => ['query', 'q'],
-    'as.*.com'              => ['qry'],
-    'ask.*'                 => ['q'],
-    'att.net'               => ['qry', 'q'],
-    'baidu.com'             => ['bs'],
-    'blingo.com'            => ['q'],
-    'citysearch.com'        => ['query'],
-    'clicknow.org.uk'       => ['q'],
-    'clusty.com'            => ['query'],
-    'comcast.net'           => ['query'],
-    'danielsearch.info'     => ['q'],
-    'devilfinder.com'       => ['q'],
-    'education.yahoo.com'   => ['p'],
-    'errors.aol.com'        => ['host'],
-    'excite'                => ['search'],
-    'ez4search.com'         => ['searchname'],
-    'fedstats.com'          => ['s'],    
-    'find.copernic.com'     => ['query'],
-    'finna.is'              => ['query'],
-    'google'                => ['q', 'as_q'],
-    'googel'                => ['q'],
-    'hotbot.lycos.com'      => ['query'],
-    'isearch.com'           => ['Terms'],
-    'local.google'          => ['q', 'near'],
-    'local.yahoo.com'       => ['stx', 'csz' ],
-    'looksmart.com'         => ['key'],
-    'lycos'                 => ['query'],
-    'maps.google'       => ['q', 'near'],
-    'msntv.msn.com'         => ['q'],
-    'munky.com'             => ['term'],
-    'mysearch.com'          => ['searchfor'],     
-    'mywebsearch.com'       => ['searchfor'],
-    'mytelus.com'           => ['q'],
-    'netscape.com'          => ['query'],
-    'overture.com'          => ['Keywords'],
-    'pricescan.com'         => ['SearchString'],
-    'reviews.search.com'    => ['q'],
-    'search.com'            => ['q'],
-    'searchalot.com'        => ['q'],
-    'searchfusion.com'      => ['t'],
-    'searchon.ca'           => ['Terms'],
-    'search.cnn.com'        => ['query'],
-    'search.bearshare.com'  => ['q'],
-    'search.comcast.net'    => ['q'],
-    'search.dmoz.org'       => ['search'],
-    'search.earthlink.net'  => ['q'],
-    'search.findsall.info'  => ['s'],
-    'search.freeserve.com'  => ['q'],
-    'search.freeze.com'     => ['Keywords'],
-    'search.go.com'         => ['search'],
-    'search.juno.com'       => ['query'],
-    'search.iol.ie'         => ['q'],
-    'search.live.com'       => ['q'],
-    'search.netzero.net'    => ['query'],
-    'search.*.msn.'           => ['q'],
-    'search.myway.com'      => ['searchfor'],
-    'search.opera.com'      => ['search'],
-    'search.start.co.il'    => ['q'],
-    'search.starware.com'   => ['qry'],
-    'search.sympatico.msn.ca' => ['q'],
-    'search.sweetim.com'    => ['q'],
-    'search.usatoday.com'   => ['kw'],
-    'search.yahoo.com'      => ['va'],
-    'search.virgilio.it'    => ['qs'],
-    'search.wanadoo.co.uk'  => ['q'],
-    'search.yahoo.com'      => ['q', 'va', 'p'],
-    'shopping.yahoo.com'    => ['p'],
-    'start.shaw.ca'         => ['q'],
+    'abcsok.no'                     => ['q'],
+    'about.com'                     => ['terms'],
+    'alltheweb.com'                 => ['q'],
+    'answers.com'                   => ['s'],
+    'aol'                           => ['query', 'q'],
+    'as.*.com'                      => ['qry'],
+    'ask.*'                         => ['q'],
+    'att.net'                       => ['qry', 'q'],
+    'baidu.com'                     => ['bs'],
+    'blingo.com'                    => ['q'],
+    'citysearch.com'                => ['query'],
+    'clicknow.org.uk'               => ['q'],
+    'clusty.com'                    => ['query'],
+    'comcast.net'                   => ['query', 'q'],
+    'cuil.com'                      => ['q'],
+    'danielsearch.info'             => ['q'],
+    'devilfinder.com'               => ['q'],
+    'ebay'                          => ['satitle'],
+    'education.yahoo.com'           => ['p'],
+    'errors.aol.com'                => ['host'],
+    'excite'                        => ['search'],
+    'ez4search.com'                 => ['searchname'],
+    'fedstats.com'                  => ['s'],    
+    'find.copernic.com'             => ['query'],
+    'finna.is'                      => ['query'],
+    'googlesyndication'             => ['q','ref', 'loc'],
+    'google'                        => ['q', 'as_q'],
+    'googel'                        => ['q'],
+    'hotbot.lycos.com'              => ['query'],
+    'isearch.com'                   => ['Terms'],
+    'local.google'                  => ['q', 'near'],
+    'local.yahoo.com'               => ['stx', 'csz' ],
+    'looksmart.com'                 => ['key'],
+    'lycos'                         => ['query'],
+    'maps.google'                   => ['q', 'near'],
+    'msntv.msn.com'                 => ['q'],
+    'munky.com'                     => ['term'],
+    'mysearch.com'                  => ['searchfor'],     
+    'mywebsearch.com'               => ['searchfor'],
+    'mytelus.com'                   => ['q'],
+    'netscape.com'                  => ['query'],
+    'nextag.com'                    => ['search'],
+    'overture.com'                  => ['Keywords'],
+    'pricescan.com'                 => ['SearchString'],
+    'reviews.search.com'            => ['q'],
+    'search.com'                    => ['q'],
+    'searchalot.com'                => ['q'],
+    'searchfusion.com'              => ['t'],
+    'searchon.ca'                   => ['Terms'],
+    'search.cnn.com'                => ['query'],
+    'search.bearshare.com'          => ['q'],
+    'search.comcast.net'            => ['q'],
+    'search.dmoz.org'               => ['search'],
+    'search.earthlink.net'          => ['q'],
+    'search.findsall.info'          => ['s'],
+    'search.freeserve.com'          => ['q'],
+    'search.freeze.com'             => ['Keywords'],
+    'search.go.com'                 => ['search'],
+    'search.juno.com'               => ['query'],
+    'search.iol.ie'                 => ['q'],
+    'search.live.com'               => ['q'],
+    'search.netzero.net'            => ['query'],
+    'search.*.msn.'                 => ['q'],
+    'search.myway.com'              => ['searchfor'],
+    'search.opera.com'              => ['search'],
+    'search.start.co.il'            => ['q'],
+    'search.starware.com'           => ['qry'],
+    'search.sympatico.msn.ca'       => ['q'],
+    'search.sweetim.com'            => ['q'],
+    'search.usatoday.com'           => ['kw'],
+    'search.yahoo.com'              => ['va'],
+    'search.virgilio.it'            => ['qs'],
+    'search.wanadoo.co.uk'          => ['q'],
+    'search.yahoo.com'              => ['q', 'va', 'p'],
+    'shopping.yahoo.com'            => ['p'],
+    'start.shaw.ca'                 => ['q'],
     'startgoogle.startpagina.nl'    => ['q'],
-    'starware.com'          => ['qry'],
-    'stumbleupon.com'       => ['url'],
-    'sucheaol.aol.de'       => ['q'],
-    'teoma.com'             => ['q'],
-    'toronto.com'           => ['query'],
-    'trustedsearch.net'     => ['w'],
-    'trustedsearch.com'     => ['w'],
-    #'trusted\-\-search.com'   => ['w'],
-    'yahoo'                 => ['p'],
-    'websearch.cbc.ca'      => ['query'],
-    'websearch.cs.com'      => ['query'],
-    'webtv.net'             => ['q'],
+    'starware.com'                  => ['qry'],
+    'stumbleupon.com'               => ['url'],
+    'sucheaol.aol.de'               => ['q'],
+    'teoma.com'                     => ['q'],
+    'toronto.com'                   => ['query'],
+    'trustedsearch.net'             => ['w'],
+    'trustedsearch.com'             => ['w'],
+    'yahoo'                         => ['p'],
+    'websearch.cbc.ca'              => ['query'],
+    'websearch.cs.com'              => ['query'],
+    'webtv.net'                     => ['q'],
     'www.bestsearchonearth.info'    => ['Keywords'],
-    'www.boat.com'          => ['HotKeysTopCategory'],
-    'www.factbites.com'     => ['kp'],
-    'www.mweb.co.za'        => ['q'],
-    'www.rr.com/html/search.cfm' => ['query'],
-    'www.wotbox.com'        => ['q'],
+    'www.boat.com'                  => ['HotKeysTopCategory'],
+    'www.factbites.com'             => ['kp'],
+    'www.mweb.co.za'                => ['q'],
+    'www.rr.com/html/search.cfm'    => ['query'],
+    'www.wotbox.com'                => ['q'],
 );
-
-my $lc = List::Compare->new(\@engines, [ keys %query_lookup ]);
-my @remaining_engines = $lc->get_complement;
-
-push @engines, @remaining_engines;
-my $regex = join " | ", @engines;
 
 sub parse_search_string {
 
     my $self = shift;
     my $url = shift;
-    
-    print $url, "\n" if $DEBUG;
-    
+        
     foreach my $engine ( keys %url_regex ) {
         
         if ( $url =~ $url_regex{$engine} ) {
             
             # fix funky URLs
             $url = uf_uristr($url);
-            
-            print "match on $engine url\n" if $DEBUG;
-            
+                        
             my $mech = $self->get_mech();
             $mech->get( $url );
     
-            my $search_term = $self->_apply_regex(
-                string  => $mech->title(),
-                regex   => $engine,
-            );
+            if ( $mech->title() ) {
+                my $search_term = $self->_apply_regex(
+                    string  => $mech->title(),
+                    regex   => $engine,
+                );
             
-            if ( $search_term ) {
-                $self->{'more'}->{'blame'} = __PACKAGE__;
-                return $search_term;
+                if ( $search_term ) {
+                    $self->{'more'}->{'blame'} = __PACKAGE__;
+                    return $search_term;
+                }
             }
         }
     }
@@ -185,11 +181,11 @@ sub parse_search_string {
         $self->{'more'}->{'blame'} = __PACKAGE__;
         return $terms;
     }
-    else {
-        # We've come up empty.  Let's see what the superclass can do
-        $self->{'more'}->{'blame'} = 'URI::ParseSearchString';
-        return $self->SUPER::parse_search_string( $url, @_ );
-    }
+
+    # We've come up empty.  Let's see what the superclass can do
+    $self->{'more'}->{'blame'} = 'URI::ParseSearchString';
+    return $self->SUPER::parse_search_string( $url, @_ );
+
 }
 
 sub se_term {
@@ -201,33 +197,41 @@ sub se_term {
 
 sub parse_more {
     
-    my $self = shift;
-    my $url = shift;
+    my $self    = shift;
+    my $url     = shift;
     
     die "you need to supply at least one argument" unless $url;
     
     $self->{'more'} = undef;
     $self->{'more'}->{'string'} = $url;
+    
+    my $regex = join " | ", $self->_get_engines;
+    $self->{'more'}->{'regex'}  = $regex;
+    $self->{'more'}->{'url'}    = $url;
 
     if ( $url =~ m{ ( (?: $regex ) .* ?/ ) .* ?\? (.*)\z }xms ) {
         
         my $domain       = $1;
         my $query_string = $2;
-        my $cgi = new CGI( $query_string );
         
-        # remove everything after the first slash
+        # for some reason, escaped quoted strings were messed up under mod_perl
+        $query_string   =~ s{&quot;}{"}gxms;
+        my $cgi          = new CGI( $query_string );
+        
+        # remove trailing slash
         $domain =~ s{/\z}{};
     
         my @param_parts = ( );
-        my %params = ( );
+        my %params      = ( );
         
         ENGINE:
-        foreach my $engine ( @engines ) {
+        foreach my $engine ( $self->_get_engines ) {
             if ( $domain =~ /$engine/i ) {
                 
-                print "$domain looks like $engine\n" if $DEBUG;
                 my @names = @{ $query_lookup{$engine} };
-                #print Dumper \@names if $DEBUG;
+                
+                $self->{'more'}->{'domain'} = $domain;
+                $self->{'more'}->{'names'}  = \@names;
                 
                 foreach my $name ( @names ) {
                     push @param_parts, $cgi->param( $name );
@@ -264,10 +268,9 @@ sub blame {
 
 sub guess {
     
-    my $self = shift;
-    my $url = shift || $self->{'more'}->{'string'};
+    my $self    = shift;
+    my $url     = shift || $self->{'more'}->{'string'};
     
-    print "starting $url" if $DEBUG;
     my @guesses = ( 'q', 'query', 'searchfor' );
      
     if ( $url =~ m{ ( .* ?/ ) .* ?\? (.*)\z }xms ) {
@@ -303,8 +306,8 @@ sub get_mech {
 
 sub _apply_regex {
 
-    my $self = shift;
-    my %rules = ( 
+    my $self    = shift;
+    my %rules   = ( 
         string => { type => SCALAR },
         regex  => { type => SCALAR },
     );
@@ -316,6 +319,18 @@ sub _apply_regex {
     }
 
     return;
+}
+
+sub _get_engines {
+    
+    my $lc = List::Compare->new(\@engines, [ keys %query_lookup ]);
+    my @remaining_engines = $lc->get_complement;
+    
+    my   @all_engines = @engines;
+    push @all_engines, @remaining_engines;
+    
+    return @all_engines;
+    
 }
 
 

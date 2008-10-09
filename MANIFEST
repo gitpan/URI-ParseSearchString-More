@@ -3,6 +3,7 @@ README
 LICENSE
 Changes
 Makefile.PL
+examples/001_parse.pl
 lib/URI/ParseSearchString/More.pm
 t/001_load.t
 t/002_pod.t  
@@ -11,3 +12,4 @@ t/004_critic.t
 t/005_parse_more.t
 t/urls.cfg
 t/perlcriticrc
+META.yml                                 Module meta-data (added by MakeMaker)
