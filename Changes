@@ -1,6 +1,9 @@
 Revision history for Perl module URI::ParseSearchString::More
 
-0.06 2008-01-11
+0.07 2008-10-09
+    - Added license to Makefile to improve Kwalitee
+
+0.06 2008-10-09
     - Tweaked aol regex so that it doesn't flag urls in which
       aol is a referring url
     - Added googlesyndication as its own engine
