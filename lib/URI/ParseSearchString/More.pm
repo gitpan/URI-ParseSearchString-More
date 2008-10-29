@@ -5,7 +5,7 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use CGI;
 use Data::Dumper;
@@ -215,8 +215,10 @@ sub parse_more {
         my $query_string = $2;
         
         # for some reason, escaped quoted strings were messed up under mod_perl
-        $query_string   =~ s{&quot;}{"}gxms;
-        my $cgi          = new CGI( $query_string );
+        $query_string   =~ s{&quot;}{"}gxms;        
+        $query_string   =~ s{&\#39;}{'}gxms;
+
+        my $cgi         = new CGI( $query_string );
         
         # remove trailing slash
         $domain =~ s{/\z}{};
@@ -289,19 +291,60 @@ sub guess {
     return;
 }
 
+sub set_cached {
+    
+    my $self    = shift;
+    my $switch  = shift;
+    
+    if ( $switch ) {
+        $self->{'__more_cached'} = 1;
+    }
+    else {
+        $self->{'__more_cached'} = 0;
+    }
+    
+    return $self->{'__more_cached'};
+    
+}
+
+sub get_cached {
+    
+    my $self    = shift;
+    
+    return $self->{'__more_cached'};
+    
+}
+
 sub get_mech {
  
-    my $self = shift;
-    if ( !$self->{'mech'} ) {
+    my $self    = shift;
+    my $cache   = $self->get_cached;
+    
+    if ( $cache ) {
+        
+        if ( !exists $self->{'__more_mech_cached'} ) {
+       
+            my $mech = WWW::Mechanize::Cached->new();
+            $mech->agent("URI::ParseSearchString::More $VERSION");
+            $self->{'__more_mech_cached'} = $mech;
+                   
+        }        
+        
+        return $self->{'__more_mech_cached'};
+        
+    }
+        
+    # return a non-caching object    
+    if ( !exists $self->{'__more_mech'} ) {
    
-        my $mech = WWW::Mechanize::Cached->new();
+        my $mech = WWW::Mechanize->new();
         $mech->agent("URI::ParseSearchString::More $VERSION");
-        $self->{'mech'} = $mech;
+        $self->{'__more_mech'} = $mech;
    
     }
-
-    return $self->{'mech'};
-
+    
+    return $self->{'__more_mech'};
+    
 }
 
 sub _apply_regex {
@@ -343,7 +386,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 =head1 SYNOPSIS
 
@@ -358,10 +401,12 @@ This module is a subclass of L<URI::ParseSearchString>, so you can call any
 methods on this object that you would call on a URI::ParseSearchString object. 
 This module works a little harder than its SuperClass to get you results. If 
 it fails, it will return to you the results that L<URI::ParseSearchString>
-would have returned to you anyway. 
+would have returned to you anyway, so it should function well as a drop-in
+replacement. 
 
-L<WWW::Mechanize::Cached> is used to extract search strings from some URLs 
-which contain session info rather than search params.  There is additional
+L<WWW::Mechanize> is used to extract search strings from some URLs 
+which contain session info rather than search params.  Optionally,
+L<WWW::Mechanize::Cached> can be used to cache your lookups. There is additional
 parsing and also a guess() method which will return good results in many cases
 of doubt.
 
@@ -381,17 +426,21 @@ At this point, this is the only "extended" URI::ParseSearchString method.
 This method performs the following bit of logic:
 
 1) If the URL supplied looks to be a search query with session info rather 
-than search data in the URL, it will attempt a WWW::Mechanize::Cached 
-lookup of the URL and will try to extract the search terms from the page 
-returned.  
+than search data in the URL, it will attempt to access the URL and extract the
+search terms from the page returned.  
 
 2) If this returns no results, the URL will be processed by parse_more()
 
 3) If there are still no results, the results of URI::ParseSearchString::se_term 
 will be returned.
 
-WWW::Mechanize::Cached is used to speed up your movement through large log 
-files which may contain multiple similar URLs.
+WWW::Mechanize::Cached can be used to speed up your movement through large log 
+files which may contain multiple similar URLs:
+
+  use URI::ParseSearchString::More;
+  my $more = URI::ParseSearchString::More;
+  $more->set_cached( 1 );
+  my $search_terms = $more->se_term( $url );
 
 One interesting thing to note is that maps.google.* URLs have 2 important 
 params: "q" and "near".   The same can be said for local.google.*  I would 
@@ -405,13 +454,13 @@ the search terms for these searches.  So, expect the following results:
 
 Engines with session info currently supported:
 
-  http://aolsearch.aol.com/aol/search
+  aol.com
   http://as.starware.com/dp/search
   http://as.weatherstudio.com/dp/search
 
 =head2 se_term( $url )
 
-A convenience method that calls parse_search_string.
+A convenience method which calls parse_search_string.
 
 =head1 URI::ParseSearchString::More
 
@@ -422,11 +471,23 @@ string parsed by parse_search_string().  Possible results:
 
   URI::ParseSearchString
   URI::ParseSearchString::More
+  
+=head2 set_cached( 0|1 )
+
+Turn caching off and on.  As of version 0.08 caching is OFF by default.  See
+KNOWN ISSUES below for more info on this.
+
+=head2 get_cached
+
+Returns 1 if caching is currently on, 0 if it is not.
 
 =head2 get_mech
 
-This gives you direct access to the L<WWW::Mechanize::Cached> object.  If you
-know what you're doing, play around with it.  Caveat emptor.
+This gives you direct access to the Mechanize object.  If caching is enabled,
+a L<WWW::Mechanize::Cached> object will be returned.  If caching is disabled,
+a L<WWW::Mechanize> object will be returned.
+
+If you know what you're doing, play around with it.  Caveat emptor.
 
   use URI::ParseSearchString::More;
   my $more = URI::ParseSearchString::More;
@@ -438,7 +499,7 @@ know what you're doing, play around with it.  Caveat emptor.
 
 =head2 parse_more( $url )
 
-Handles the guts for More's parsing.  This is automatically called (if needed)
+Handles the bulk of More's parsing.  This is automatically called (if needed)
 when you pass a search string to se_term().  However, you may also call it
 directly.  Just keep in mind that this method will NOT try to get results from
 URI::ParseSearchString if it comes up empty.
@@ -447,7 +508,7 @@ URI::ParseSearchString if it comes up empty.
 
 For the most part, the parsing that goes on is done with specific search 
 engines (ie. the ones that we already know about) in mind.  However, in a lot 
-cases, a good guess is all that you need.  For example, an URI which contains
+cases, a good guess is all that you need.  For example, a URI which contains
 a query string with the parameter "q" or "query" is generally the product of
 a search.  If se_term() or parse_more() has come up empty, guess may just
 provide you with a valid search term.  Then again, it may not.  Caveat emptor.
@@ -465,6 +526,24 @@ L<URI::ParseSearchString> that may be added to this module:
 
 Despite its low version number, this module actually works.  It is,
 however, still very young and the interface is subject to some change.
+
+=head1 KNOWN ISSUES
+
+On some systems, this module dies with the following message when caching is
+enabled:
+
+Can't store CODE items at blib/lib/Storable.pm (autosplit into blib/lib/auto/Storable/_freeze.al) line 339
+
+For this reason, caching is disabled by default as of version 0.08  If caching
+does not fail on your system, I encourage you to enable it.  It seems to me
+that this error is not caused by any problem with this module, but I haven't
+really spent too much time looking into it as I can't replicate it on my
+development machine.  Leaving it enabled by default would cause a lot of
+failing tests and switching it off only for tests would mean a lot of passing
+tests but failing real world use.
+
+See the documentation it t/005_parse_more.t for information on how to run the
+parsing tests with caching enabled.
 
 =head1 BUGS
 
@@ -513,9 +592,6 @@ L<http://search.cpan.org/dist/URI-ParseSearchString>
 
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
-
-The full text of the license can be found in the
-LICENSE file included with this module.
 
 =cut
 

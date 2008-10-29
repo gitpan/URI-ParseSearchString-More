@@ -5,7 +5,7 @@ use warnings;
 
 # t/001_load.t - check module loading and create testing directory
 
-use Test::More tests => 18;
+use Test::More tests => 23;
 use lib '../lib';
 
 BEGIN { use_ok( 'URI::ParseSearchString::More' ); }
@@ -59,3 +59,13 @@ foreach my $engine ( keys %urls ) {
         cmp_ok( $search_term, 'eq', $query, "$engine returns correct search term" );
     }
 }
+
+$more->set_cached( 0 );
+ok ( !$more->get_cached, "is not caching");
+isa_ok( $more->get_mech, 'WWW::Mechanize' );
+ 
+$more->set_cached( 1 );
+ok ( $more->get_cached, "is caching");
+
+isa_ok( $more->get_mech, 'WWW::Mechanize' );
+isa_ok( $more->get_mech, 'WWW::Mechanize::Cached' );

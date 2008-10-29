@@ -24,4 +24,5 @@ WriteMakefile(
                      'WWW::Mechanize::Cached'   => 0,
                      'URI::Heuristic'           => 0,
                     },
+    LICENSE     => 'perl',
 );

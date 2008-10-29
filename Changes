@@ -1,5 +1,14 @@
 Revision history for Perl module URI::ParseSearchString::More
 
+0.08 2008-10-29
+    - Fixed license in Makefile as it never actually made it into 0.07
+    - Caching is now disabled by default
+    - Fixed bug with escaped single quotes in search strings
+    - Added set_cached() and get_cached() methods
+    - Updated get_mech() to return either a WWW::Mechanize or
+      WWW::Mechanize::Cached object, depending on the return value of
+      get_cached()
+
 0.07 2008-10-09
     - Added license to Makefile to improve Kwalitee
 
