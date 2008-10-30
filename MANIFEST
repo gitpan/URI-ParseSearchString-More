@@ -10,6 +10,8 @@ t/002_pod.t
 t/003_coverage.t  
 t/004_critic.t  
 t/005_parse_more.t
+t/006_extended.t
 t/urls.cfg
+t/extended_urls.cfg
 t/perlcriticrc
 META.yml                                 Module meta-data (added by MakeMaker)

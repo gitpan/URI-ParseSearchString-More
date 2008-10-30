@@ -5,7 +5,7 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use CGI;
 use Data::Dumper;
@@ -386,7 +386,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.08
+Version 0.09
 
 =head1 SYNOPSIS
 
