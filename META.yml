@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               URI-ParseSearchString-More
-version:            0.09
+version:            0.10
 abstract:           Extract search strings from more referrers.
 author:
     - Olaf Alders (olaf@wundersolutions.com)

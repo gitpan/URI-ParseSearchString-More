@@ -1,5 +1,14 @@
 Revision history for Perl module URI::ParseSearchString::More
 
+0.10 2008-11-20
+    - Added search.incredimail.com to engines
+    - Added search.rogers.com to engines
+    - Added search.rr.com to engines
+    - Added searchservice.myspace.com to engines
+    - moved dogpile tests to extended url tests
+    - Added yandex.ru to engines
+    - Added youtube.com to engines
+
 0.09 2008-10-30
     - Moved googlesyndication.com tests as they were causing
       failing test reports.  Some of these tests are tricky

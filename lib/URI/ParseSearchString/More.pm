@@ -5,7 +5,7 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use CGI;
 use Data::Dumper;
@@ -107,6 +107,7 @@ my %query_lookup = (
     'search.freeserve.com'          => ['q'],
     'search.freeze.com'             => ['Keywords'],
     'search.go.com'                 => ['search'],
+    qr/search\d?.incredimail.com/      => ['q'],
     'search.juno.com'               => ['query'],
     'search.iol.ie'                 => ['q'],
     'search.live.com'               => ['q'],
@@ -114,6 +115,8 @@ my %query_lookup = (
     'search.*.msn.'                 => ['q'],
     'search.myway.com'              => ['searchfor'],
     'search.opera.com'              => ['search'],
+    'search.rogers.com'             => ['qf', 'qo'],
+    'search.rr.com'                 => ['qs'],
     'search.start.co.il'            => ['q'],
     'search.starware.com'           => ['qry'],
     'search.sympatico.msn.ca'       => ['q'],
@@ -123,6 +126,7 @@ my %query_lookup = (
     'search.virgilio.it'            => ['qs'],
     'search.wanadoo.co.uk'          => ['q'],
     'search.yahoo.com'              => ['q', 'va', 'p'],
+    'searchservice.myspace.com'     => ['qry'],
     'shopping.yahoo.com'            => ['p'],
     'start.shaw.ca'                 => ['q'],
     'startgoogle.startpagina.nl'    => ['q'],
@@ -134,6 +138,8 @@ my %query_lookup = (
     'trustedsearch.net'             => ['w'],
     'trustedsearch.com'             => ['w'],
     'yahoo'                         => ['p'],
+    'yandex.ru'                     => ['text'],
+    'youtube.com'                   => ['search_query'],
     'websearch.cbc.ca'              => ['query'],
     'websearch.cs.com'              => ['query'],
     'webtv.net'                     => ['q'],
@@ -386,7 +392,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.09
+Version 0.10
 
 =head1 SYNOPSIS
 
