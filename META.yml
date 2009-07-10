@@ -1,33 +1,24 @@
---- #YAML:1.0
-name:               URI-ParseSearchString-More
-version:            0.10
-abstract:           Extract search strings from more referrers.
-author:
-    - Olaf Alders (olaf@wundersolutions.com)
-license:            perl
-distribution_type:  module
-configure_requires:
-    ExtUtils::MakeMaker:  0
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         URI-ParseSearchString-More
+version:      0.11
+version_from: lib/URI/ParseSearchString/More.pm
+installdirs:  site
 requires:
-    Config::General:      0
-    Data::Dumper:         0
-    File::Spec:           0
-    List::Compare:        0
-    Params::Validate:     0
-    Test::More:           0
-    Test::Pod:            0
-    Test::Pod::Coverage:  0
-    Test::Simple:         0.44
-    Test::WWW::Mechanize:  0
-    URI::Heuristic:       0
-    URI::ParseSearchString:  0
-    WWW::Mechanize:       0
-    WWW::Mechanize::Cached:  0
-no_index:
-    directory:
-        - t
-        - inc
-generated_by:       ExtUtils::MakeMaker version 6.46
-meta-spec:
-    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
-    version:  1.4
+    Config::General:               0
+    Data::Dumper:                  0
+    File::Spec:                    0
+    List::Compare:                 0
+    Params::Validate:              0
+    Test::More:                    0
+    Test::Pod:                     0
+    Test::Pod::Coverage:           0
+    Test::Simple:                  0.44
+    Test::WWW::Mechanize:          0
+    URI::Heuristic:                0
+    URI::ParseSearchString:        0
+    WWW::Mechanize:                0
+    WWW::Mechanize::Cached:        0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.30_01

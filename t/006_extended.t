@@ -18,6 +18,16 @@ cases, just add them to t/extended_urls.cfg and re-run this test.  If you find f
 URLs, please create an RT ticket and include the section(s) of urls.cfg which
 you have added.
 
+If you would like to run these tests, set the environment
+variable TEST_UPM_EXTENDED to some true value.  For example, you can modify this
+script:
+
+$ENV{'TEST_UPM_EXTENDED'} = 1
+
+or, depending on your shell:
+
+export TEST_UPM_EXTENDED=1
+
 If you would like to run this test with caching enabled, set the environment
 variable TEST_UPM_CACHED to some true value.  For example, you can modify this
 script:
@@ -27,6 +37,7 @@ $ENV{'TEST_UPM_CACHED'} = 1
 or, depending on your shell:
 
 export TEST_UPM_CACHED=1
+
 
 =cut
 

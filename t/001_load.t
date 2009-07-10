@@ -37,7 +37,7 @@ my $mech = Test::WWW::Mechanize->new();
 my $query = "testing";
 
 my %urls = (
-    aol => [ "http://aolsearch.aol.com/aol/search?invocationType=topsearchbox.webhome&query=$query" ],
+    aol => [ "http://search.aol.com/aol/search?s_it=topsearchbox.nrf&q=$query" ],
     as  => [ 
         "http://as.starware.com/dp/search?src_id=&client_id=&product=&serv=web&version=&it=-1&step=1&subproduct=site&qry=$query&z=Find+It", 
         "http://as.weatherstudio.com/dp/search?src_id=&client_id=&product=&serv=web&version=&it=-1&step=1&subproduct=site&qry=$query&z=Find+It",
@@ -47,16 +47,23 @@ my %urls = (
 foreach my $engine ( keys %urls ) {
     
     foreach my $url ( @{$urls{$engine}}) {
+
+        $mech->get( $url );
+        my $why = 'AOL appears to be blocking you.  Bad AOL, bad!';
         
-        $mech->get_ok($url, "got search page from $engine");
+        SKIP: {
+          skip $why, 3 if $mech->status == 403 && $engine eq 'aol';
     
-        ok( $mech->title(), "got a title from $engine: " . $mech->title() );
-        my $search_term = $more->_apply_regex(
-            string  => $mech->title(),
-            regex   => $engine,
-        );
+            $mech->get_ok( $url, "got search page ($url) from $engine" );
         
-        cmp_ok( $search_term, 'eq', $query, "$engine returns correct search term" );
+            ok( $mech->title(), "got a title from $engine: " . $mech->title() );
+            my $search_term = $more->_apply_regex(
+                string  => $mech->title(),
+                regex   => $engine,
+            );
+            
+            cmp_ok( $search_term, 'eq', $query, "$engine returns correct search term" );
+        }
     }
 }
 

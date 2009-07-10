@@ -49,6 +49,20 @@ my $more = URI::ParseSearchString::More->new ();
      
      #diag( $test->{'url'} );
      my $terms = $more->parse_search_string( $test->{'url'} );
+     
+     if ( !$terms ) {
+        print "**********************";
+        print $test->{'url'};
+        print $more->get_mech->status;
+        print "\n";;
+        print $more->get_mech->content;
+        exit(0);
+     }
+     
+     if ( $more->get_mech && $more->get_mech->status && $more->get_mech->status == 403 ) {
+        diag( "You may be getting blocked by $test->{'url'}" );
+        exit(0);
+     }
 
      cmp_ok ( $terms, 'eq', $test->{'terms'}, "got $terms");
      cmp_ok( $more->blame(), 'eq', 'URI::ParseSearchString::More', "parsed by More" );
