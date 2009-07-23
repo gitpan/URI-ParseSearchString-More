@@ -1,12 +1,12 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         URI-ParseSearchString-More
-version:      0.11
+version:      0.12
 version_from: lib/URI/ParseSearchString/More.pm
 installdirs:  site
 requires:
     Config::General:               0
-    Data::Dumper:                  0
+    Data::Dump:                    0
     File::Spec:                    0
     List::Compare:                 0
     Params::Validate:              0
@@ -18,7 +18,7 @@ requires:
     URI::Heuristic:                0
     URI::ParseSearchString:        0
     WWW::Mechanize:                0
-    WWW::Mechanize::Cached:        0
+    WWW::Mechanize::Cached:        1.33
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.30_01

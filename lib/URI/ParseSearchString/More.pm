@@ -5,22 +5,24 @@ use strict;
 
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use CGI;
-use Data::Dumper;
+use Data::Dump qw( dump );
 use List::Compare;
 use Params::Validate qw( validate SCALAR );
 use URI::Heuristic qw(uf_uristr);
 use WWW::Mechanize::Cached;
 
 my %search_regex = (
+    answers => qr{(.*) - Yahoo! Answers},
     aol => qr/AOL Search results for "(.*)"/,
     as  => qr{(?:WeatherStudio|Starware) (.*) Search Results},
     dogpile => qr{(.*) - Dogpile Web Search},
 );
 
 my %url_regex = (
+    answers => qr{answers.yahoo.com},
     aol => qr{aol.com/(?:aol|aolcom)/search\?encquery=},
     as  => qr{as.\w+.com/dp/search\?x=},
     dogpile => qr{http://www.dogpile},
@@ -28,6 +30,10 @@ my %url_regex = (
 
 # local.yahoo.com should come before Yahoo as it has different
 # params
+# ie. this list is for ordering some of the engines in the regex.  if an
+# engine has no reason to be at a certain point in the list, it should
+# just be listed in the %query_lookup table
+
 my @engines = (
     'local.google',
     'maps.google',
@@ -42,6 +48,7 @@ my @engines = (
     'sucheaol.aol.de',
     'aol',
     'ask.*',
+    'fastbrowsersearch.com',
     'as.*.com',
     'att.net',
     'trustedsearch.com',
@@ -58,6 +65,7 @@ my %query_lookup = (
     'ask.*'                         => ['q'],
     'att.net'                       => ['qry', 'q'],
     'baidu.com'                     => ['bs'],
+    'bing.com'                      => ['q'],
     'blingo.com'                    => ['q'],
     'citysearch.com'                => ['query'],
     'clicknow.org.uk'               => ['q'],
@@ -71,6 +79,7 @@ my %query_lookup = (
     'errors.aol.com'                => ['host'],
     'excite'                        => ['search'],
     'ez4search.com'                 => ['searchname'],
+    'fastbrowsersearch.com'         => ['q'],
     'fedstats.com'                  => ['s'],
     'find.copernic.com'             => ['query'],
     'finna.is'                      => ['query'],
@@ -241,9 +250,11 @@ sub parse_more {
 
         my @param_parts = ( );
         my %params      = ( );
+        my @engines     = $self->_get_engines;
 
         ENGINE:
-        foreach my $engine ( $self->_get_engines ) {
+        foreach my $engine ( @engines ) {
+
             if ( $domain =~ /$engine/i ) {
 
                 my @names = @{ $query_lookup{$engine} };
@@ -402,7 +413,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.11
+Version 0.12
 
 =head1 SYNOPSIS
 
@@ -533,45 +544,17 @@ provide you with a valid search term.  Then again, it may not.  Caveat emptor.
 
 =head1 TO DO
 
-Here is a list of some of the engines currently not covered by
-L<URI::ParseSearchString> that may be added to this module:
-
-  images.google.*
-  www.adelphia.net/google/
-  http://answers.yahoo.com/question/index;_ylt=Al7fJtDUTm2S69bM0VvjPDIjzKIX?qid=20061214165004AADtB1I
+I've pretty much added all of the search engines I care about.  If you'd like
+something added, please get in touch.
 
 =head1 NOTES
 
-Despite its low version number, this module actually works.  It is,
-however, still very young and the interface is subject to some change.
+Despite its low version number, this module is now stable.
 
 =head1 KNOWN ISSUES
 
-On some systems, this module dies with the following message when caching is
-enabled:
-
-Can't store CODE items at blib/lib/Storable.pm (autosplit into blib/lib/auto/Storable/_freeze.al) line 339
-
-For this reason, caching is disabled by default as of version 0.08  If caching
-does not fail on your system, I encourage you to enable it.  It seems to me
-that this error is not caused by any problem with this module, but I haven't
-really spent too much time looking into it as I can't replicate it on my
-development machine.  Leaving it enabled by default would cause a lot of
-failing tests and switching it off only for tests would mean a lot of passing
-tests but failing real world use.
-
-See the documentation it t/005_parse_more.t for information on how to run the
-parsing tests with caching enabled.
-
-NOTE: As of 0.11 the $mech->get call is wrapped in an eval.  This gets past the
-die problems, even though I still have no idea what the root cause actually is.
-So, if you have WWW::Mechanize::Cached installed, you should be able to use the
-caching option at this point.
-
-The actual problem may have to do with the following unresolved ticket for
-WWW::Mechanize::Cached:
-
-L<http://rt.cpan.org/Public/Bug/Display.html?id=42693>
+As of 0.12 WWW::Mechanize::Cached 1.33 is required.  This solves the errors
+which were being thrown by Storable.
 
 =head1 BUGS
 
