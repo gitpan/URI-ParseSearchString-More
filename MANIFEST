@@ -1,8 +1,12 @@
-MANIFEST
-README
-LICENSE
+Build.PL
 Changes
+INSTALL
+LICENSE
+MANIFEST
+META.json
 Makefile.PL
+README
+dist.ini
 examples/001_parse.pl
 lib/URI/ParseSearchString/More.pm
 t/001_load.t
@@ -12,8 +16,10 @@ t/004_critic.t
 t/005_parse_more.t
 t/006_extended.t
 t/007_focus.t
-t/urls.cfg
+t/author-critic.t
+t/author-pod-spell.t
 t/extended_urls.cfg
 t/perlcriticrc
-META.yml                                 Module YAML meta-data (added by MakeMaker)
-META.json                                Module JSON meta-data (added by MakeMaker)
+t/release-cpan-changes.t
+t/release-pod-coverage.t
+t/urls.cfg

@@ -1,14 +1,14 @@
-package URI::ParseSearchString::More;
-
 use warnings;
 use strict;
 
+package URI::ParseSearchString::More;
+{
+  $URI::ParseSearchString::More::VERSION = '0.15';
+}
+
 use base qw( URI::ParseSearchString );
 
-our $VERSION = '0.14';
-
 use CGI;
-use Data::Dump qw( dump );
 use List::Compare;
 use Params::Validate qw( validate SCALAR );
 use URI::Heuristic qw(uf_uristr);
@@ -342,7 +342,7 @@ sub get_mech {
         if ( !exists $self->{'__more_mech_cached'} ) {
 
             my $mech = WWW::Mechanize::Cached->new();
-            $mech->agent( "URI::ParseSearchString::More $VERSION" );
+            $mech->agent( "URI::ParseSearchString::More" );
             $self->{'__more_mech_cached'} = $mech;
 
         }
@@ -355,7 +355,7 @@ sub get_mech {
     if ( !exists $self->{'__more_mech'} ) {
 
         my $mech = WWW::Mechanize->new();
-        $mech->agent( "URI::ParseSearchString::More $VERSION" );
+        $mech->agent( "URI::ParseSearchString::More" );
         $self->{'__more_mech'} = $mech;
 
     }
@@ -395,7 +395,13 @@ sub _get_engines {
 
 }
 
-#################### main pod documentation begin ###################
+
+1;
+
+# ABSTRACT: Extract search strings from more referrers.
+
+__END__
+=pod
 
 =head1 NAME
 
@@ -403,14 +409,13 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-Version 0.13
+version 0.15
 
 =head1 SYNOPSIS
 
   use URI::ParseSearchString::More;
   my $more = URI::ParseSearchString::More;
   my $search_terms = $more->se_term( $search_engine_referring_url );
-
 
 =head1 DESCRIPTION
 
@@ -429,13 +434,11 @@ of doubt.
 
 Repository: L<http://github.com/oalders/uri-parsesearchstring-more/tree/master>
 
-
 =head1 USAGE
 
   use URI::ParseSearchString::More;
   my $more = URI::ParseSearchString::More;
   my $search_terms = $more->se_term( $url );
-
 
 =head1 URI::ParseSearchString
 
@@ -545,58 +548,16 @@ Despite its low version number, this module is now stable.
 As of 0.13 WWW::Mechanize::Cached 1.33 is required.  This solves the errors
 which were being thrown by Storable.
 
-=head1 BUGS
-
-Please use the RT interface to report bugs:
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=URI-ParseSearchString-More>
-
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc URI::ParseSearchString::More
-
-You can also look for information at:
-
-=over 4
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/URI-ParseSearchString-More>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/URI-ParseSearchString-More>
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=URI-ParseSearchString-More>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/URI-ParseSearchString>
-
-=back
-
 =head1 AUTHOR
 
-    Olaf Alders
-    CPAN ID: OALDERS
-    WunderCounter.com
-    olaf@wundersolutions.com
-    http://www.wundercounter.com
+Olaf Alders <olaf@wundercounter.com>
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
-This program is free software; you can redistribute
-it and/or modify it under the same terms as Perl itself.
+This software is copyright (c) 2012 by Olaf Alders.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-#################### main pod documentation end ###################
-
-1;
-
-# The preceding line will help the module return a true value
