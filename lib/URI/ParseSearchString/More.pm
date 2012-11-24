@@ -3,7 +3,7 @@ use strict;
 
 package URI::ParseSearchString::More;
 {
-  $URI::ParseSearchString::More::VERSION = '0.15';
+  $URI::ParseSearchString::More::VERSION = '0.16';
 }
 
 use base qw( URI::ParseSearchString );
@@ -401,6 +401,7 @@ sub _get_engines {
 # ABSTRACT: Extract search strings from more referrers.
 
 __END__
+
 =pod
 
 =head1 NAME
@@ -409,7 +410,7 @@ URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 SYNOPSIS
 
@@ -560,4 +561,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
