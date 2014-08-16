@@ -22,11 +22,10 @@ export TEST_UPM_CACHED=1
 
 =cut
 
-use Test::More qw( no_plan );
+use Test::Most;
+use Test::RequiresInternet;
 
-use lib '../lib';
-
-BEGIN { use_ok( 'URI::ParseSearchString::More' ); }
+use URI::ParseSearchString::More;
 
 my $more = URI::ParseSearchString::More->new();
 
@@ -57,11 +56,9 @@ foreach my $test ( @{ $config{'urls'} } ) {
         exit( 0 );
     }
 
-    cmp_ok( $terms, 'eq', $test->{'terms'}, "got $terms" );
-    cmp_ok(
-        $more->blame(), 'eq',
-        'URI::ParseSearchString::More',
-        "parsed by More"
-    );
+    is( $terms, $test->{'terms'}, "got $terms" );
+    is( $more->blame(), 'URI::ParseSearchString::More', 'parsed by More' );
 
 }
+
+done_testing();

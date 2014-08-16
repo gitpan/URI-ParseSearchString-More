@@ -5,10 +5,10 @@ use warnings;
 
 # t/001_load.t - check module loading and create testing directory
 
-use Test::More;
-use lib '../lib';
+use Test::Most;
+use Test::RequiresInternet;
 
-BEGIN { use_ok( 'URI::ParseSearchString::More' ); }
+use URI::ParseSearchString::More;
 
 my $more = URI::ParseSearchString::More->new();
 isa_ok( $more, 'URI::ParseSearchString::More' );
@@ -62,13 +62,10 @@ else {
 
 my $query = "testing";
 
-my %urls = (
-    aol =>
+my %urls
+    = ( aol =>
         ["http://search.aol.com/aol/search?s_it=topsearchbox.nrf&q=$query"],
-    as => [
-        "http://as.starware.com/dp/search?src_id=&client_id=&product=&serv=web&version=&it=-1&step=1&subproduct=site&qry=$query&z=Find+It",
-    ],
-);
+    );
 
 foreach my $engine ( keys %urls ) {
 

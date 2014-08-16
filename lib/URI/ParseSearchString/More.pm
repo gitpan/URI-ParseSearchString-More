@@ -2,20 +2,19 @@ use warnings;
 use strict;
 
 package URI::ParseSearchString::More;
-{
-  $URI::ParseSearchString::More::VERSION = '0.16';
-}
-
+$URI::ParseSearchString::More::VERSION = '0.17';
 use base qw( URI::ParseSearchString );
 
-use CGI;
-use List::Compare;
+use List::Compare ();
 use Params::Validate qw( validate SCALAR );
+use Try::Tiny;
+use URI;
 use URI::Heuristic qw(uf_uristr);
-use WWW::Mechanize::Cached;
+use URI::QueryParam        ();
+use WWW::Mechanize::Cached ();
 
 my %search_regex = (
-    answers => [qr{(.*) - Yahoo! Answers}],
+    answers => [qr{(.*)}],
     aol     => [qr{(.*) - AOL Search Results}],
     as      => [qr{Starware (.*) Search Results}],
     dogpile => [qr{(.*) - Dogpile Web Search}],
@@ -131,7 +130,6 @@ my %query_lookup = (
     'shopping.yahoo.com'         => ['p'],
     'start.shaw.ca'              => ['q'],
     'startgoogle.startpagina.nl' => ['q'],
-    'starware.com'               => ['qry'],
     'stumbleupon.com'            => ['url'],
     'sucheaol.aol.de'            => ['q'],
     'teoma.com'                  => ['q'],
@@ -153,7 +151,6 @@ my %query_lookup = (
 );
 
 sub parse_search_string {
-
     my $self = shift;
     my $url  = shift;
 
@@ -165,12 +162,12 @@ sub parse_search_string {
             $url = uf_uristr( $url );
 
             my $mech = $self->get_mech();
-            eval { $mech->get( $url ); };
 
-            if ( $@ ) {
+            try { $mech->get( $url ); }
+            catch {
                 warn "Issue with url: $url";
-                warn $@;
-            }
+                warn $_;
+            };
 
             if ( $mech->status && $mech->status == 403 ) {
                 warn "403 returned for $url  Are you being blocked?";
@@ -200,18 +197,14 @@ sub parse_search_string {
     # We've come up empty.  Let's see what the superclass can do
     $self->{'more'}->{'blame'} = 'URI::ParseSearchString';
     return $self->SUPER::parse_search_string( $url, @_ );
-
 }
 
 sub se_term {
-
     my $self = shift;
     return $self->parse_search_string( @_ );
-
 }
 
 sub parse_more {
-
     my $self = shift;
     my $url  = shift;
 
@@ -233,14 +226,14 @@ sub parse_more {
         $query_string =~ s{&quot;}{"}gxms;
         $query_string =~ s{&\#39;}{'}gxms;
 
-        my $cgi = new CGI( $query_string );
-
         # remove trailing slash
         $domain =~ s{/\z}{};
 
         my @param_parts = ();
         my %params      = ();
         my @engines     = $self->_get_engines;
+
+        my $uri = URI->new( $url );
 
     ENGINE:
         foreach my $engine ( @engines ) {
@@ -253,8 +246,8 @@ sub parse_more {
                 $self->{'more'}->{'names'}  = \@names;
 
                 foreach my $name ( @names ) {
-                    push @param_parts, $cgi->param( $name );
-                    $params{$name} = $cgi->param( $name );
+                    push @param_parts, $uri->query_param( $name );
+                    $params{$name} = $uri->query_param( $name );
                 }
 
                 last ENGINE;
@@ -275,32 +268,25 @@ sub parse_more {
     }
 
     return;
-
 }
 
 sub blame {
-
     my $self = shift;
     return $self->{more}->{blame};
-
 }
 
 sub guess {
-
     my $self = shift;
     my $url = shift || $self->{'more'}->{'string'};
 
     my @guesses = ( 'q', 'query', 'searchfor' );
 
-    if ( $url =~ m{ ( .* ?/ ) .* ?\? (.*)\z }xms ) {
-
-        my $domain       = $1;
-        my $query_string = $2;
-        my $cgi          = new CGI( $query_string );
+    my $uri = URI->new( $url );
+    if ( $uri->query_params ) {
 
         foreach my $guess ( @guesses ) {
-            if ( $cgi->param( $guess ) ) {
-                return $cgi->param( $guess );
+            if ( $uri->query_param( $guess ) ) {
+                return $uri->query_param( $guess );
             }
         }
     }
@@ -309,7 +295,6 @@ sub guess {
 }
 
 sub set_cached {
-
     my $self   = shift;
     my $switch = shift;
 
@@ -321,19 +306,15 @@ sub set_cached {
     }
 
     return $self->{'__more_cached'};
-
 }
 
 sub get_cached {
-
     my $self = shift;
 
     return $self->{'__more_cached'};
-
 }
 
 sub get_mech {
-
     my $self  = shift;
     my $cache = $self->get_cached;
 
@@ -361,11 +342,9 @@ sub get_mech {
     }
 
     return $self->{'__more_mech'};
-
 }
 
 sub _apply_regex {
-
     my $self  = shift;
     my %rules = (
         string => { type => SCALAR },
@@ -379,12 +358,10 @@ sub _apply_regex {
             return $1;
         }
     }
-
     return;
 }
 
 sub _get_engines {
-
     my $lc = List::Compare->new( \@engines, [ keys %query_lookup ] );
     my @remaining_engines = $lc->get_complement;
 
@@ -392,7 +369,6 @@ sub _get_engines {
     push @all_engines, @remaining_engines;
 
     return @all_engines;
-
 }
 
 
@@ -404,13 +380,15 @@ __END__
 
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
 URI::ParseSearchString::More - Extract search strings from more referrers.
 
 =head1 VERSION
 
-version 0.16
+version 0.17
 
 =head1 SYNOPSIS
 
@@ -438,7 +416,7 @@ Repository: L<http://github.com/oalders/uri-parsesearchstring-more/tree/master>
 =head1 USAGE
 
   use URI::ParseSearchString::More;
-  my $more = URI::ParseSearchString::More;
+  my $more = URI::ParseSearchString::More->new;
   my $search_terms = $more->se_term( $url );
 
 =head1 URI::ParseSearchString
@@ -461,7 +439,7 @@ WWW::Mechanize::Cached can be used to speed up your movement through large log
 files which may contain multiple similar URLs:
 
   use URI::ParseSearchString::More;
-  my $more = URI::ParseSearchString::More;
+  my $more = URI::ParseSearchString::More->new;
   $more->set_cached( 1 );
   my $search_terms = $more->se_term( $url );
 
@@ -478,7 +456,6 @@ the search terms for these searches.  So, expect the following results:
 Engines with session info currently supported:
 
   aol.com
-  http://as.starware.com/dp/search
 
 =head2 se_term( $url )
 
